@@ -1,0 +1,118 @@
+---
+title: "EDA"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(readxl)
+library(lubridate)
+library(dplyr)
+library(ggplot2)
+
+
+#Read in excel file
+ibs_dat <- read_excel("~/Desktop/RL_IBS/ibs_dat.xlsx", skip = 1)
+```
+
+
+```{r}
+## dimensions-- 500 total claims
+dim(ibs_dat)
+
+## unique date in year-month-date-- 88 unique dates
+length(unique(ibs_dat$from_dt))
+
+## unique claim codes-- 155 
+length(unique(ibs_dat$claimno))
+
+## unique procedure descriptions-- 142
+length(unique(ibs_dat$PROCEDURE_DESC))
+```
+
+```{r}
+#sort from least recent to most recent
+#ibs_dat %>% arrange(ymd(ibs_dat$from_dt))
+
+#All of the claims with the same patient ID and confinement number belong to the same unique inpatient stay-- unique hospitalizations
+#unique(ibs_dat$conf_num)
+
+## The database does not consistently capture drug therapy administered during an inpatient confinement. This is based on how the treatments are billed. we may receive only revenue codes indicating drugs were administered. 
+```
+
+```{r}
+## First group by date, then tally the number of claims for each date
+
+######## Question to ask: are we more interested in looking at the unique claims? What does it mean for two entries to have the same claim number on the same treatment day?
+
+
+### unique claims & counts per date
+unique_claim_counts <- ibs_dat %>% arrange(ymd(ibs_dat$from_dt)) %>%
+                 group_by(from_dt, claimno) %>%
+                 tally
+
+## Create plot with unique "from_dt" as x-axis, number of TOTAL claims as y-axis
+########## This graph isn't that helpful and needs to be broken down 
+ggplot(data = unique_claim_counts, aes(x = from_dt, y = n)) +
+      geom_bar(stat = "identity", fill = "purple") +
+      labs(title ="Total Number of Claims (non-unique) per visit date",
+           x = "Date", y = "Number of (non-unique) Claims")
+
+## Plot with date on y axis, number of unique visits per YEAR-- isolate distinct from_dt and count 
+### However, this visualization will count a single hospitalization as multiple visits since those are over multiple days
+## Question   1. 
+
+unique_visits_year <- ibs_dat %>% distinct(from_dt, .keep_all = TRUE) %>% mutate(month = format(from_dt, "%m"),
+                                                           year = format(from_dt, "%Y")) %>% group_by(year) %>% tally
+
+ggplot(data = unique_visits_year, aes(x = year, y = n, group = 1)) +
+      geom_point() + geom_line(linetype=2) +
+      labs(title ="Total Number of Unique Visits per Year",
+           x = "Year", y = "Number of Visits")
+
+## We can also group these by month from year to year
+unique_visits_month <- ibs_dat %>% distinct(from_dt, .keep_all = TRUE) %>% mutate(month = format(from_dt, "%m"),
+                                                           year = format(from_dt, "%Y")) %>% group_by(year, month) %>% tally
+
+
+ggplot(data = unique_visits_month, aes(x = month, y = n, group = 1)) +
+      facet_wrap(~year) + geom_point() + geom_line(linetype=2) +
+      labs(title ="Unique Visits Each Month by Year",
+           x = "Year", y = "Number of Visits")
+
+
+### This doesn't seem to be that informative either. We can see an increasing trend in visits in 2012, also bunch in July of 2011-- maybe these are hospitalizations? 
+### From the code below we can see that IS the case. There were only 3 unique hospitalizations, all in 2011 
+
+ibs_dat[!is.na(ibs_dat[,"conf_num"]),] %>% distinct(from_dt, .keep_all = TRUE) %>% mutate(month = format(from_dt, "%m"),
+                                                           year = format(from_dt, "%Y")) %>% group_by(year, month, conf_num) %>% tally
+```
+
+
+### NLP exploration
+```{r}
+library(tokenizers)
+library(tidytext)
+
+## table of frequencies
+my_tab <- table(ibs_dat[,"PROCEDURE_DESC"]) 
+
+## order table & convert to DF
+ord_tab_df <- as.data.frame(my_tab[order(my_tab, decreasing = TRUE)])
+
+write_xlsx(ord_tab_df, "/Users/janeshe/Desktop/RL_IBS/NLP_EDA_ordered_table.xlsx")
+
+
+## Create vector just for procedure descriptions for ease of access & turn into phrases of 5 words
+desc <- tibble(txt = ibs_dat[,"PROCEDURE_DESC"])  %>% 
+  mutate_all(as.character) %>% 
+  unnest_tokens(word, txt, token="ngrams", n=5, to_lower = T) %>%
+  count(word) %>% 
+  arrange(desc(n))
+ 
+
+```
+
