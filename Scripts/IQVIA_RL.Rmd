@@ -37,9 +37,6 @@ length(unique(ibs_dat$PROCEDURE_DESC))
 #sort from least recent to most recent
 #ibs_dat %>% arrange(ymd(ibs_dat$from_dt))
 
-#All of the claims with the same patient ID and confinement number belong to the same unique inpatient stay-- unique hospitalizations
-#unique(ibs_dat$conf_num)
-
 ## The database does not consistently capture drug therapy administered during an inpatient confinement. This is based on how the treatments are billed. we may receive only revenue codes indicating drugs were administered. 
 ```
 
@@ -91,28 +88,51 @@ ibs_dat[!is.na(ibs_dat[,"conf_num"]),] %>% distinct(from_dt, .keep_all = TRUE) %
                                                            year = format(from_dt, "%Y")) %>% group_by(year, month, conf_num) %>% tally
 ```
 
-
-### NLP exploration
+Build a timeline for hospitalizations-- count number of hospitalizations throughout time frame
 ```{r}
-library(tokenizers)
-library(tidytext)
+### count number of hospitalizations throughout time frame
+#All of the claims with the same patient ID and confinement number belong to the same unique inpatient stay-- unique hospitalizations
 
-# ## table of frequencies
-# my_tab <- table(ibs_dat[,"PROCEDURE_DESC"]) 
-# 
-# ## order table & convert to DF
-# ord_tab_df <- as.data.frame(my_tab[order(my_tab, decreasing = TRUE)])
-# 
-# write_xlsx(ord_tab_df, "/Users/janeshe/Desktop/RL_IBS/NLP_EDA_ordered_table.xlsx")
+### 3 unique hospitalizations for THIS specific patient 
+unique(ibs_dat$conf_num)
 
-
-## Create vector just for procedure descriptions for ease of access & turn into phrases of 5 words
-desc <- tibble(txt = ibs_dat[,"PROCEDURE_DESC"])  %>% 
-  mutate_all(as.character) %>% 
-  unnest_tokens(word, txt, token="ngrams", n=5, to_lower = T) %>%
-  count(word) %>% 
-  arrange(desc(n))
+### visualize hospitalizations, get count of claims per date per unique hospitalization by year & month
+hosp_time <- ibs_dat %>% distinct(from_dt, .keep_all = TRUE) %>% mutate(month = format(from_dt, "%m"),
+                                                           year = format(from_dt, "%Y")) %>%
+                 group_by(conf_num, year, month) %>%
+                 tally
  
+ggplot(data = hosp_time[hosp_time$year == 2011, ], aes(x = month, y = n, fill = conf_num)) + geom_bar(stat='identity') +
+      labs(title ="Unique Visits by Month in 2011",
+           x = "Year", y = "Unique visits per month")
 
+
+### count length of hospitalization throughout time frame 
+##### Flawed approac-- actually need to look at first & last day
+
+ibs_dat %>% group_by(conf_num) %>% summarise(distinct_days = n_distinct(from_dt))
+
+length(unique(ibs_dat$from_dt))
 ```
+
+
+Exploring Disease stage & diagnoses
+```{r}
+# unique(ibs_dat$Primary_diag)
+# unique(ibs_dat$Secondary_diag)
+
+## Get dates for IBS diagnosis 
+ibs_dat %>% filter(Primary_diag == "Irritable Bowel Syndrome")
+
+### Get length of stay
+
+### Get colonoscopy or other surgical procedure dates
+
+
+### Look at conf_num OJ….. could be a colonoscopy? See what 2 day admission looks like 
+
+
+### outpatient vs hospitalizations 
+```
+
 
