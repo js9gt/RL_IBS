@@ -17,7 +17,6 @@ hosp_duration <- ibs_dat %>% filter(!is.na(conf_num)) %>%
   distinct(from_dt, .keep_all = TRUE) %>% mutate(month = format(from_dt, "%m"),
                                                year = format(from_dt, "%Y"))
 
-# for ggplot graph, comment out #filter bc we want NAs to compare to rest of the claims
 
 ggplot(data = hosp_duration[hosp_duration$year == 2011, ], 
        aes(x = as.numeric(month), y = as.numeric(hosp_length), fill = conf_num)) + 
