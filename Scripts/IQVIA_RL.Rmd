@@ -100,7 +100,7 @@ unique(ibs_dat$conf_num)
 hosp_time <- ibs_dat %>% distinct(from_dt, .keep_all = TRUE) %>% mutate(month = format(from_dt, "%m"),
                                                            year = format(from_dt, "%Y")) %>%
                  group_by(conf_num, year, month) %>%
-                 tally
+                 tally()
  
 ggplot(data = hosp_time[hosp_time$year == 2011, ], aes(x = month, y = n, fill = conf_num)) + geom_bar(stat='identity') +
       labs(title ="Unique Visits by Month in 2011",
@@ -120,17 +120,6 @@ Exploring Disease stage & diagnoses
 ```{r}
 # unique(ibs_dat$Primary_diag)
 # unique(ibs_dat$Secondary_diag)
-
-## Get dates for IBS diagnosis 
-ibs_dat %>% filter(Primary_diag == "Irritable Bowel Syndrome")
-
-### Get length of stay
-
-### Get colonoscopy or other surgical procedure dates
-
-
-### Look at conf_num OJ….. could be a colonoscopy? See what 2 day admission looks like 
-
 
 ### outpatient vs hospitalizations 
 ```
