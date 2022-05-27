@@ -1,4 +1,7 @@
 # History files
 .Rhistory
 
+# DS Store
+.DS_Store
+
 
