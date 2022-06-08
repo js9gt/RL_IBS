@@ -1,5 +1,8 @@
 ### timeline viz
 
+#Set WD to Project folder-- will want to change for future if running somewhere else
+setwd("/Users/janeshe/Desktop/RL_IBS")
+
 ##Add source file reading in data
 source('Scripts/read_data.R')
 

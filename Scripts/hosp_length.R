@@ -1,8 +1,15 @@
 
 ## Get hospitalization lengths of stay
 
+#Set WD to Project folder-- will want to change for future if running somewhere else
+setwd("/Users/janeshe/Desktop/RL_IBS")
+
 ##Add source file reading in data
 source('Scripts/read_data.R')
+
+library(dplyr)
+library(lubridate)
+library(ggplot2)
 
 # first subset to the hospitalizations, then group by hospitalization code
 # then order by from_dt and tally to see the number of claims on each unique date
