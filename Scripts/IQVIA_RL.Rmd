@@ -116,11 +116,4 @@ length(unique(ibs_dat$from_dt))
 ```
 
 
-Exploring Disease stage & diagnoses
-```{r}
-# unique(ibs_dat$Primary_diag)
-# unique(ibs_dat$Secondary_diag)
-
-### outpatient vs hospitalizations 
-```
 
