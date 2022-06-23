@@ -115,5 +115,39 @@ ibs_dat %>% group_by(conf_num) %>% summarise(distinct_days = n_distinct(from_dt)
 length(unique(ibs_dat$from_dt))
 ```
 
+Starting to group together bloodwork, imaging, surgery, colonoscopy, prescription claims
+```{r}
+events_timeline_procedure <- ibs_dat %>% 
+  # IBS-- need to include this separately because of possibility of overwriting
+  #mutate(event_type = ifelse(Primary_diag == "Irritable Bowel Syndrome", "IBS_diagnosis", NA)) %>%
+  
+  ### Create event_type as column of NAs
+  mutate(event_type = NA) %>%
+  
+  mutate(event_type = case_when(
+    grepl("emergency department", PROCEDURE_DESC, ignore.case = TRUE) ~ "ED_visit",
+    grepl("colonoscopy", PROCEDURE_DESC, ignore.case = TRUE) ~ "colonoscopy",
+    grepl("Esophagogastroduodenoscopy", 
+          PROCEDURE_DESC, ignore.case = TRUE) ~ "esophagogastroduodenoscopy",
+    (grepl("Enterectomy", PROCEDURE_DESC, ignore.case = TRUE) | 
+       grepl("Enterostomy", PROCEDURE_DESC, ignore.case = TRUE)) ~ "surgery",
+    (grepl("ultrasound", PROCEDURE_DESC, ignore.case = TRUE) | 
+       grepl("tomography", PROCEDURE_DESC, ignore.case = TRUE) ~ "imaging")))
+
+
+## Create new column called "group"
+ibs_dat$group <- 0
+
+## we know prescription claims have NDC codes-- for anything with an NDC code, rewrite that as the "prescription" group
+ibs_dat %>%
+  mutate(group = ifelse(!is.na(ndc), "prescription", group)) %>%
+
+## group the labs
+  mutate(group = case_when(
+     (grepl("blood count", PROCEDURE_DESC, ignore.case = TRUE) | 
+       grepl("urinalysis", PROCEDURE_DESC, ignore.case = TRUE) | 
+       grepl("metabolic panel", PROCEDURE_DESC, ignore.case = TRUE) ~ "labs"))
+
+```
 
 
