@@ -134,20 +134,11 @@ events_timeline_procedure <- ibs_dat %>%
     (grepl("ultrasound", PROCEDURE_DESC, ignore.case = TRUE) | 
        grepl("tomography", PROCEDURE_DESC, ignore.case = TRUE) ~ "imaging")))
 
-
-## Create new column called "group"
-ibs_dat$group <- 0
-
-## we know prescription claims have NDC codes-- for anything with an NDC code, rewrite that as the "prescription" group
-ibs_dat %>%
-  mutate(group = ifelse(!is.na(ndc), "prescription", group)) %>%
-
-## group the labs
-  mutate(group = case_when(
-     (grepl("blood count", PROCEDURE_DESC, ignore.case = TRUE) | 
-       grepl("urinalysis", PROCEDURE_DESC, ignore.case = TRUE) | 
-       grepl("metabolic panel", PROCEDURE_DESC, ignore.case = TRUE) ~ "labs"))
-
 ```
 
+Want to group data within 3 day intervals to categorize that as one visit
+```{r}
+#so all the points that are 3 days or less apart are put into one group
+## want to exclude hospitalizations bc those are a single visit (if conf_num exists = hospitalization)
+```
 
