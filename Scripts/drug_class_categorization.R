@@ -1407,8 +1407,14 @@ ibs_drug_class <- ibs_drug_class %>%
   mutate(drug_class = case_when(
     
     ############### Aminosalicylates
+    drug_name == "sulfasalazine" |
+    drug_name == "mesalamine" |
+    drug_name == "balsalazide_disodium" |
+    drug_name == "olsalazine_sodium" ~"aminosalicylates", 
+    
+    ############### Antibiotics
     drug_name == "ciprofloxacin" |
-    drug_name == "metronidazole" ~ "aminosalicylate", 
+    drug_name == "metronidazole" ~ "antibiotics", 
     
     ############### Immune modulators
     drug_name == "methotrexate" |
