@@ -143,4 +143,155 @@ Want to group data within 3 day intervals to categorize that as one visit
 ```
 
 
+Create new column for labs & imaging
+```{r}
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+
+ibs_dat$lab <- 0
+ibs_dat$imaging <- 0
+
+ibs_lab_image <- ibs_dat %>%
+  
+  ## group the labs
+  mutate(lab = case_when(
+    ## CBC w/ diff
+    proc_cde ==  "85025" ~ "cbc_w_diff",
+    
+      ## C reactive protein
+    proc_cde == "86140" ~ "c_reactive_protein",  
+      
+    ## Erythrocyte sedimentation rate
+    proc_cde == "85651" | 
+    proc_cde == "85652" ~ "erythrocyte_sed_rate",
+    
+    ## Albumin
+    proc_cde == "82040" ~ "albumin",
+    
+    ## AST
+    proc_cde == "84450" ~ "ast", 
+    
+    ## ALT
+    proc_cde == "84460" ~ "alt", 
+    
+    ## Total protein
+    proc_cde == "84155" ~"total_protein")) %>%
+
+
+  mutate(imaging = case_when(
+    
+    ## CT abdomen w/ & w/o contrast
+    proc_cde == "74170" ~ "ct_abdomen_w_wo_contrast",
+    
+    ## CT abdomen & pelvis w/o contrast
+    proc_cde == "74176"  ~ "ct_abdomen_pelvis_wo_contrast",
+    
+    ## CT abdomen & pelvis w/ contrast 
+    proc_cde == "74177" ~ "ct_abdomen_pelvis_w_contrast",
+    
+    ## MRI abdomen
+    proc_cde == "74183" ~ "mri_abdomen",
+    
+    ## MR enterography
+    proc_cde == "74181"|
+    proc_cde == "74182" |
+    proc_cde == "74183"|
+    proc_cde == "72195" |
+    proc_cde == "72196"|
+    proc_cde == "72197" ~ "mr_enterography",
+    
+    ## Xray abdomen
+    proc_cde == "74018" ~ "xray_abdomen" ))
+
+
+
+### create visuals for frequency
+# First subset for when labs occurred (no NAs), then group by from_dt
+ibs_lab_image %>% filter(lab != "NA") %>% group_by(from_dt, lab, claimno) %>%
+  tally %>% mutate(month_day = format(from_dt, "%m-%d"),
+                   year = format(from_dt, "%Y"), month = format(from_dt, "%m"))
+
+```
+
+Comparing singular patient to 4 patients 
+```{r}
+##### IBS/IBD/Crohn's diagnosis for new patients 
+####### note: many w/ other potentially interesting diagnoses that don't contain those keywords
+dat_4pts %>% filter(grepl('crohn|irritable', Primary_diag, ignore.case = TRUE)) %>% group_by(from_dt, PAT_ID, Primary_diag) %>% tally()
+
+
+### ED visit info by searching the PROCEDURE_DESC for instances of "emergency department" for that one patient 
+dat_4pts %>% filter(PAT_ID == '05imadm9fhf0idl5') %>% filter(grepl("surgical|colectomy", PROCEDURE_DESC, ignore.case = TRUE)) %>%
+  group_by(from_dt)
+
+
+## Get hospitalization lengths
+# first subset to the hospitalizations, then group by hospitalization code
+# then order by from_dt and tally to see the number of claims on each unique date
+# find difference between the first claim date and last claim date + 1 for each unique hospitalization to get total length
+
+# only run before ### to get table w/ unique lengths
+# for better graphics, need to mutate into year & month to capture time frame
+
+hosp_duration <- dat_4pts %>% filter(PAT_ID == '05imadm9fhf0idl5') %>% filter(!is.na(conf_num)) %>% 
+  group_by(conf_num, from_dt) %>% arrange(from_dt) %>% tally() %>% #only include the distinct() line for small table
+  mutate(hosp_length = max(ymd(from_dt)) - min(ymd(from_dt)) + 1) %>% # distinct(conf_num, hosp_length) ####
+  distinct(from_dt, .keep_all = TRUE) %>% mutate(month_day = format(from_dt, "%m-%d"),
+                                               year = format(from_dt, "%Y"))
+
+
+
+ggplot(data = hosp_duration, 
+       aes(x = month_day, y = as.numeric(hosp_length), fill = conf_num)) + 
+  geom_bar(stat='identity') + labs(title ="Hospitalizations by Month in 2017",
+       x = "Month", y = "Hospitalization Length (Days)")
+
+
+### Now view unique claims for outpatient vs inpatient 
+##### inpatient visuals
+
+## pull out inpatient AKA hospitalizations (Have conf_num code) data, remember to filter just for this singular patient
+inpatient <- dat_4pts %>% filter(PAT_ID == '05imadm9fhf0idl5') %>% filter(!is.na(conf_num))
+
+# These are the distinct visit dates/distinct claims
+inpatient_visits <- inpatient %>%  distinct(from_dt, .keep_all = TRUE) %>% 
+  arrange(ymd(.$from_dt)) %>%
+  group_by(from_dt, claimno) %>%
+  tally
+
+
+# graph of above for individual visit frequency
+## Create plot with unique "from_dt" as x-axis, number of unique visits per date 
+
+ggplot(data = inpatient_visits, aes(x = from_dt, y = n)) +
+  geom_bar(stat = "identity", fill = "purple") +
+  labs(title ="Unique Inpatient Visit Claims",
+       x = "Date", y = "Claims") + ylim(0, 3)
+
+#### outpatient visuals (non-pharmacy)
+
+# get rid of pharmacy claims which have NDC codes
+
+outpatient <- dat_4pts %>% filter(PAT_ID == '05imadm9fhf0idl5') %>% filter(is.na(conf_num)) %>% filter(is.na(ndc))
+
+## Visualize total outpatient claims
+#### There are 220 total rows for this, but only 40 unique claims (distinct dates)
+
+# These are the distinct visit dates/distinct claims
+outpatient_visits <- outpatient %>%  distinct(from_dt, .keep_all = TRUE) %>% 
+  arrange(ymd(.$from_dt)) %>%
+  group_by(from_dt, claimno) %>%
+  tally
+
+
+# graph of above for individual visit frequency
+## Create plot with unique "from_dt" as x-axis, number of unique visits per date 
+
+ggplot(data = outpatient_visits, aes(x = from_dt, y = n)) +
+  geom_bar(stat = "identity", fill = "purple") +
+  labs(title ="Unique Outpatient Visit Claims",
+       x = "Date", y = "Claims") + ylim(0, 5)
+```
+
 
