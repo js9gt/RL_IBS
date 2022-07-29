@@ -47,7 +47,7 @@ ggplot(data = drug_usage, aes(x = from_dt, y = n, colour = drug_class)) +
 
 ggplot(data = drug_usage, aes(x = month_day, y = n, colour = drug_class)) +
   geom_bar(stat = "identity", aes(fill =  drug_class)) +
-  labs(title ="Drug Name Prescribed per visit date by Year",
+  labs(title ="Drug Class Prescribed per visit date by Year",
        x = "Date", y = "Claims") + ylim(0, 3) + scale_fill_manual(values = c("orange", "blue", "gray")) + scale_colour_manual(values = c("orange", "blue", "gray")) + facet_grid(facets = year ~ .) +
   scale_x_discrete("month_day", c("01-17", "02-17", "03-16", "04-17", "05-18", 
                                   "06-19", "07-17", "08-13", "09-12", "10-12", "11-12", "12-12"))
