@@ -7,7 +7,7 @@ library(ggplot2)
 setwd("/Users/janeshe/Desktop/RL_IBS")
 
 ##Add source file reading in data from the drug class categorization
-source('Scripts/drug_class_categorization.R')
+source('Scripts/read_data.R')
 
 
 ######### Visualizing the drug usage by name AND by class
@@ -15,7 +15,7 @@ source('Scripts/drug_class_categorization.R')
 
 # First wrangle data to get the visits dates, drug class, drugs used
 # These are the distinct visit, drug class, and drug used-- only ones that have NDC codes
-drug_usage <- ibs_drug_class %>%  distinct(from_dt, .keep_all = TRUE) %>% 
+drug_usage <- ibs_dat %>%  distinct(from_dt, .keep_all = TRUE) %>% 
   arrange(ymd(.$from_dt)) %>% filter(ndc != "NA") %>%
   group_by(drug_class, drug_name, from_dt, claimno) %>%
   tally %>% mutate(month_day = format(from_dt, "%m-%d"),
