@@ -8,7 +8,9 @@
 Protocol/~$VIA_Analysis_Components.docx
 
 #SAS files
-.sas7bdat
+Data/cohort_claim.sas7bdat
+Data/cohort_enroll.sas7bdat
+Data/cohort_enroll2.sas7bdat
 
 #excel files
 .xlsx
