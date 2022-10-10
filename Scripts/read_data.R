@@ -4,43 +4,45 @@
 library(readxl)
 library(stringr)
 library(dplyr)
+library(haven)
 
 #Set WD to Project folder-- will want to change for future if running somewhere else
 setwd("/Users/janeshe/Desktop/RL_IBS")
 
 #Read in excel file
-ibs_dat <- read_excel("ibs_dat.xlsx", skip = 1)
+#ibs_dat <- read_excel("ibs_dat.xlsx", skip = 1)
 
 
 #Read in excel file for 4 additional patients
-dat_4pts <- read_excel("data_4pts.xlsx", 
-                        col_types = c("text", "numeric", "text", 
-                                       "text", "text", "text", "text", "numeric", 
-                                       "text", "numeric", "numeric", "text", 
-                                       "numeric", "numeric", "numeric", 
-                                       "numeric", "numeric", "text", "text", 
-                                       "text", "text", "numeric", "text", 
-                                       "numeric", "numeric", "text", "text", 
-                                       "text", "text", "text", "text", "text", 
-                                       "text", "text", "numeric", "numeric", 
-                                       "numeric", "numeric", "text", "numeric", 
-                                       "numeric", "numeric", "numeric", 
-                                       "numeric", "numeric", "numeric", 
-                                       "numeric", "numeric", "numeric", 
-                                       "numeric", "numeric", "numeric", 
-                                       "text", "text", "numeric", "numeric", 
-                                       "text", "text", "text", "text", "text", 
-                                       "text", "text", "numeric", "text", 
-                                       "numeric"))
+# dat_4pts <- read_excel("data_4pts.xlsx", 
+#                         col_types = c("text", "numeric", "text", 
+#                                        "text", "text", "text", "text", "numeric", 
+#                                        "text", "numeric", "numeric", "text", 
+#                                        "numeric", "numeric", "numeric", 
+#                                        "numeric", "numeric", "text", "text", 
+#                                        "text", "text", "numeric", "text", 
+#                                        "numeric", "numeric", "text", "text", 
+#                                        "text", "text", "text", "text", "text", 
+#                                        "text", "text", "numeric", "numeric", 
+#                                        "numeric", "numeric", "text", "numeric", 
+#                                        "numeric", "numeric", "numeric", 
+#                                        "numeric", "numeric", "numeric", 
+#                                        "numeric", "numeric", "numeric", 
+#                                        "numeric", "numeric", "numeric", 
+#                                        "text", "text", "numeric", "numeric", 
+#                                        "text", "text", "text", "text", "text", 
+#                                        "text", "text", "numeric", "text", 
+#                                        "numeric"))
+
+cohort <- read_sas("cohort_claim.sas7bdat", NULL)
+
 
 ## Pad NDC codes to contain 0 in front so all are standardized length
 #### COMEMNT---- turns NDC codes from numeric to a character when including 0's
 
-ibs_dat$ndc <- str_pad(ibs_dat$ndc, max(nchar(na.omit(ibs_dat$ndc))), side="left", pad="0")
+cohort$ndc <- str_pad(ibs_dat$ndc, max(nchar(na.omit(ibs_dat$ndc))), side="left", pad="0")
 
-## do the same for 4 pts NDC codes
 
-dat_4pts$ndc <- str_pad(dat_4pts$ndc, max(nchar(na.omit(dat_4pts$ndc))), side="left", pad="0")
  
 ##### all the data manipulation sections ########
 
@@ -54,10 +56,10 @@ dat_4pts$ndc <- str_pad(dat_4pts$ndc, max(nchar(na.omit(dat_4pts$ndc))), side="l
 # Ileo-cecal Description
 # Colonoscopy
 
-ibs_dat$group <- 0
+cohort$group <- 0
 
 ## we know prescription claims have NDC codes-- for anything with an NDC code, rewrite that as the "prescription" group
-ibs_dat <- ibs_dat %>%
+cohort <- cohort %>%
   ## group the labs
   mutate(group = case_when(
     ## CBC w/ diff
@@ -164,9 +166,9 @@ ibs_dat <- ibs_dat %>%
 
 
 ##### ## Create a new column for drug_name & drug_class
-ibs_dat$drug_name <- 0
+cohort$drug_name <- 0
 
-ibs_dat <- ibs_dat %>%
+cohort <- cohort %>%
   
   ############### Aminosalicylates
   mutate(drug_name = case_when(
@@ -1557,9 +1559,9 @@ ibs_dat <- ibs_dat %>%
       ndc == "68012030930" ~ "budesonide"))
 
 ### create new column for specific drug class
-ibs_dat$drug_class <- 0
+cohort$drug_class <- 0
 
-ibs_dat <- ibs_dat %>%
+cohort <- cohort %>%
   mutate(drug_class = case_when(
     
     ############### Aminosalicylates
@@ -1596,6 +1598,8 @@ ibs_dat <- ibs_dat %>%
 
 ### Create a new column to identify diagnosis
 
-ibs_dat$diagnosis <- ifelse(grepl("(\\b556)|(\\bK51)", ibs_dat$diag1),"ulcerative_colitis",
-                             ifelse(grepl("(\\b555)|(\\bK50)", ibs_dat$diag1), "crohns", NA))
+cohort$diagnosis <- ifelse(grepl("(\\b556)|(\\bK51)", cohort$diag1),"ulcerative_colitis",
+                             ifelse(grepl("(\\b555)|(\\bK50)", cohort$diag1), "crohns", NA))
 
+#Output as RDS file for upload
+saveRDS(cohort, "cohort.rds")
