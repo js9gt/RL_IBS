@@ -5,7 +5,7 @@
 setwd("/Users/janeshe/Desktop/RL_IBS")
 
 ##Add source file reading in data
-source('Scripts/read_data.R')
+source('Scripts/read_cohort_data.R')
 
 library(dplyr)
 library(lubridate)
@@ -18,7 +18,7 @@ library(ggplot2)
 # only run before ### to get table w/ unique lengths
 # for better graphics, need to mutate into year & month to capture time frame
 
-hosp_duration <- ibs_dat %>% filter(!is.na(conf_num)) %>% 
+hosp_duration <- cohort %>% filter(!is.na(conf_num)) %>% 
   group_by(conf_num, from_dt) %>% arrange(from_dt) %>% tally() %>% #only include the distinct() line for small table
   mutate(hosp_length = max(ymd(from_dt)) - min(ymd(from_dt)) + 1) %>% # distinct(conf_num, hosp_length) ####
   distinct(from_dt, .keep_all = TRUE) %>% mutate(month = format(from_dt, "%m"),
@@ -35,7 +35,7 @@ ggplot(data = hosp_duration[hosp_duration$year == 2011, ],
 # double checkina against what we had earlier
 # now shows that initially just grouping by distinct dates (below) was the wrong approach since there are time gaps
 
-ibs_dat %>% filter(conf_num == "jd8kqo0t2bd1r4dn") %>% group_by(from_dt) %>% distinct(from_dt)
+cohort %>% filter(conf_num == "jd8kqo0t2bd1r4dn") %>% group_by(from_dt) %>% distinct(from_dt)
 
 ## For others, replace with "ojunniviggd1r4dn" (4 days in Dec)
 # "rxfbfog2rdd1r4dn" 15 days in 2011

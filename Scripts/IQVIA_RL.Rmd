@@ -415,41 +415,53 @@ ibs_lab_image %>% filter(PAT_ID == "05imadm9fhf0idl5") %>%
   filter(grepl('crohn|irritable', Primary_diag, ignore.case = TRUE)) %>% filter(from_dt == as.POSIXct("2017-04-08", tz = "UTC") ) 
 ```
 
+### 12/07 meeting
 
-Working to bundle visits 
+Working to bundle visits -- cumulative percentage curve
 ```{r}
-## only for non hospitalizations (no conf_num)
-## Then, group any time period with more than 3 days (4 or more days) apart as separate visits
-
-#all dates that are 3 days or less apart are put into one group
-
-library(data.table)
-### Subset by non-hosp data (outpatient visits)
-outpatient <- ibs_dat %>% filter(is.na(conf_num)) %>%
-  #Sort by date
-  arrange(from_dt)
-
-outpatient$visit_group <- cumsum(ifelse(difftime(outpatient$from_dt,
-                                  shift(outpatient$from_dt, fill = outpatient$from_dt[1]), 
-                                  units = "days") >= 3 
-                         ,1, 0)) + 1
-
-### To view "accuracy" of visit divisions
-#outpatient %>% select(from_dt, visit_group) %>% View()
+setwd("/Users/janeshe/Desktop/RL_IBS")
+source('Scripts/visit_grouping.R')
 
 
-###### run this after running all the read_data steps to have access to the drug groupings
-## make a column that contains the length of time that's passed between the next from_dt and the current from dt
+######## use frequency curve to visualize and find cutoffs ###########
+num_freq <- outpatient %>% select(pat_id, from_dt, between_dt)%>% 
+  group_by(between_dt) %>% count() %>% na.omit()
+names(num_freq) <- c("days_between_visits", "count")
 
-outpatient <- outpatient %>% 
-  #Calculate number of days between visits
-  mutate(between_dt =as.numeric(c(diff(from_dt),0))/86400) %>% select(from_dt, visit_group, between_dt)
+# create percentages
+num_freq <- num_freq %>% arrange(days_between_visits) %>% mutate(percent = count/ sum(num_freq$count))
+num_freq$cumulative_percentage <- cumsum(num_freq$percent)
 
-# Calculating
-subs <- outpatient %>% distinct(from_dt, visit_group, between_dt) %>% select(from_dt, visit_group, between_dt) %>% View()
 
-sum(subs$between_dt > 3) / length(unique(subs$visit_group))
+## plot cumulative percentage
+library(ggplot2)
 
+#cumulative plot
+ggplot(data = num_freq, aes(x = days_between_visits, y = cumulative_percentage)) + geom_point() + geom_line() + geom_smooth() + xlim(0,30)
+
+
+### double checking with our overall frequency bar graph with a smoothing line
+
+ggplot(frequency, aes(x=between_dt)) + geom_histogram(aes(y = ..density..), binwidth=1) + xlim(0,15) + geom_density()
+#xlim(0, 15)
+
+```
+
+```{r}
+## trying to identify visits that had a bunch of consecutive visits, that the code would just count as a single visit since each biling date was less than 4 days apart (our preliminary definition) from the next visit
+
+## using outpatient data, just select a few columns
+outpatient %>% select(pat_id, date, between_dt, group, drug_name, drug_class, visit_group) %>%
+  #group by patient ID, then group by visit group
+  group_by(pat_id, visit_group) %>%
+  #sort by earliest to most recent date within each visit group
+  arrange(date, .by_group = TRUE) %>% 
+  # within each visit group, calculate the number of days between the current and the first date
+  mutate(within_group_day_difference = as.numeric(date - min(date))) %>%
+  select(pat_id, date, visit_group, within_group_day_difference, group) %>% filter(pat_id == "o85jims6dec0sb8v") %>% View()
+
+#### code works, just look at above example ^^
+## group can be prescription, labs, or imaging
 
 ```
 

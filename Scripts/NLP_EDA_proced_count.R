@@ -5,7 +5,7 @@ library(writexl)
 setwd("/Users/janeshe/Desktop/RL_IBS")
 
 ##Add source file reading in data
-source('Scripts/read_data.R')
+source('Scripts/read_cohort_data.R')
 
 ## table of frequencies
 my_tab <- table(ibs_dat[,"PROCEDURE_DESC"]) 

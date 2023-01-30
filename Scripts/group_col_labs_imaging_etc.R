@@ -6,13 +6,13 @@ library(lubridate)
 setwd("/Users/janeshe/Desktop/RL_IBS")
 
 ##Add source file reading in data
-source('Scripts/read_data.R')
+source('Scripts/read_cohort_data.R')
 
 #### Create plot with unique "from_dt" as x-axis, number of TOTAL claims as y-axis, color by the group
 ## also facet by year 
 
 ### unique claims & counts per date
-group_claim_cts <- ibs_dat %>% arrange(ymd(ibs_dat$from_dt)) %>%
+group_claim_cts <- cohort %>% arrange(ymd(cohort$from_dt)) %>%
   group_by(from_dt, claimno, group) %>%
   tally %>% mutate(month_day = format(from_dt, "%m-%d"),
                    year = format(from_dt, "%Y"), month = format(from_dt, "%m"))
