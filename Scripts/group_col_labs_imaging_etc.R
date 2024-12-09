@@ -3,10 +3,10 @@ library(ggplot2)
 library(lubridate)
 
 #Set WD to Project folder-- will want to change for future if running somewhere else
-setwd("/Users/janeshe/Desktop/RL_IBS")
+setwd("~/RL_IBS")
 
 ##Add source file reading in data
-source('Scripts/read_cohort_data.R')
+source('Scripts/01_read_cohort_data.R')
 
 #### Create plot with unique "from_dt" as x-axis, number of TOTAL claims as y-axis, color by the group
 ## also facet by year 

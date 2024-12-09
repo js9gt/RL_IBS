@@ -2,7 +2,7 @@
 ## Reading in data
 
 #Set WD to Project folder-- will want to change for future if running somewhere else
-setwd("/Users/janeshe/Desktop/RL_IBS")
+setwd("~/RL_IBS")
 
 ##Add source file reading in data
 source('Scripts/01_read_cohort_data.R')
@@ -1594,10 +1594,15 @@ cohort <- cohort %>%
 cohort$diagnosis <- ifelse(grepl("(\\b556)|(\\bK51)", cohort$diag1),"ulcerative_colitis",
                              ifelse(grepl("(\\b555)|(\\bK50)", cohort$diag1), "crohns", NA))
 
-## for BLANK values in conf_num, introduce NA instead
+
+## for BLANK values in conf_num and NDC, introduce NA instead
 cohort$conf_num <- as.character(cohort$conf_num)
 cohort$conf_num[cohort$conf_num == ""] <- NA
 
+cohort$ndc[cohort$ndc == ""] <- NA
 
 #Output as RDS file for upload
 #saveRDS(cohort, "cohort.rds")
+
+
+
