@@ -7,10 +7,25 @@
 # this weird file
 Protocol/~$VIA_Analysis_Components.docx
 
+# all data files
+Data/
+
+# all .RData files
+*.RData
+
+# the Output folder
+Output/
+
+# the protocol folder
+Protocol/
+
 #SAS files
 *.sas7bdat
 
 #excel files
 *.xlsx
+
+# PDF files
+*.pdf
 
 
