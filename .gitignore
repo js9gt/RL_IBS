@@ -4,9 +4,6 @@
 # DS Store
 .DS_Store
 
-# this weird file
-Protocol/~$VIA_Analysis_Components.docx
-
 # all data files
 Data/
 

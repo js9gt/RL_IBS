@@ -6,9 +6,6 @@ library(DTRreg); library(randomForestSRC); library(IHsurvrf)
 setwd("~/survrf/Scripts/Data Simulations")
 source("F00.generic.R")
 
-setwd("~/survrf/Scripts/IHsurvrf")
-source("R/IH.dtrSurv.R")
-
 
 setwd("~/RL_IBS")
 ##Add source file reading in data
@@ -190,7 +187,7 @@ args.IHsurvrf <- list(data = train %>% select(- c("overall.delta", "overall.time
                  nTimes = length(timepoints),
                  tieMethod = "random",
                  criticalValue = value.criterion, evalTime = NULL, 
-                 splitRule = ifelse(value.criterion == "mean", "mean", "logrank"),
+                 splitRule = "mean",
                  ERT = ert, uniformSplit = ert, replace = !ert,
                  randomSplit = rs, nTree = Ntree, mTry = rep(6, nstages),
                  stratifiedSplit = FALSE, 
@@ -205,12 +202,8 @@ values[cv, "ns.IHsurvRF"] = nodesize
 set.seed(cv)
 
 IHsurvrf.policy <- 
-  try(do.call(IHdtrSurv, c(args.IHsurvrf, list(nodeSize = nodesize, minEvent = mindeath))))
+  try(do.call(IHsurvrf, c(args.IHsurvrf, list(nodeSize = nodesize, minEvent = mindeath))))
 err.IHsurvrf = class(IHsurvrf.policy)[1] == "try-error"
-
-
-
-#save(IHsurvrf.policy, file = "20stage_cv10_1.RData")
 
 
 
@@ -271,7 +264,7 @@ set.seed(cv)
 
 ### A5. zero-order model
 zom.policy <- 
-  try(do.call(IHdtrSurv, c(args.IHsurvrf, list(nodeSize = 1e+9, minEvent = 1e+9))))
+  try(do.call(IHsurvrf, c(args.IHsurvrf, list(nodeSize = 1e+9, minEvent = 1e+9))))
 err.zom = class(zom.policy)[1] == "try-error"
 
 values[cv, "ns.ZOM"] = 1e+9
@@ -361,70 +354,70 @@ results_summary <- lapply(results, function(res) colMeans(res, na.rm = TRUE))
 results_summary
 
 
-#mean_value_IHsurvrf <- sapply(results_summary, function(res) res["IHsurvRF"])
-#mean_value_observed <- sapply(results_summary, function(res) res["observed"])
+mean_value_IHsurvrf <- sapply(results_summary, function(res) res["IHsurvRF"])
+mean_value_observed <- sapply(results_summary, function(res) res["observed"])
 
 
 # Combine into a data frame
-#plot_data <- data.frame(
-#  Trees = tree_sizes,
-#  MeanIHsurvRF = mean_value_IHsurvrf,
-#  meanobserved = mean_value_observed
-#)
+plot_data <- data.frame(
+  Trees = tree_sizes,
+  MeanIHsurvRF = mean_value_IHsurvrf,
+  meanobserved = mean_value_observed
+)
 
 # Create the line plot
-#ggplot(plot_data) +
-#  # Plot IHsurvRF values
-#  geom_line(aes(x = Trees, y = MeanIHsurvRF), color = "cornflowerblue", size = 1) +
-#  geom_point(aes(x = Trees, y = MeanIHsurvRF), color = "bisque4", size = 3) +
-#  # Plot observed values
-#  geom_line(aes(x = Trees, y = meanobserved), color = "grey", size = 1, linetype = "dashed") +
-#  geom_point(aes(x = Trees, y = meanobserved), color = "grey", size = 3) +
-#  # Labels and titles
-#  labs(
-#    x = "Number of Trees",
-#    y = "Value"  # Update y-axis label
-#  ) +
-#  # Blank background theme
-#  theme_void(base_size = 14) +
-#  theme(
-#    axis.line = element_line(color = "black"),  # Add axis lines
-#    axis.text = element_text(color = "black"),  # Add axis text
-#    axis.title.x = element_text(color = "black"),  # Ensure x-axis title styling remains default
-#    axis.title.y = element_text(angle = 90, vjust = 0.5, hjust = 0.5, color = "black"),  # Vertical y-axis label
-#    plot.margin = margin(t = 10, r = 10, b = 40, l = 40)  # Add white space: top, right, bottom, left
-#  )
+ggplot(plot_data) +
+  # Plot IHsurvRF values
+  geom_line(aes(x = Trees, y = MeanIHsurvRF), color = "cornflowerblue", size = 1) +
+  geom_point(aes(x = Trees, y = MeanIHsurvRF), color = "bisque4", size = 3) +
+  # Plot observed values
+  geom_line(aes(x = Trees, y = meanobserved), color = "grey", size = 1, linetype = "dashed") +
+  geom_point(aes(x = Trees, y = meanobserved), color = "grey", size = 3) +
+  # Labels and titles
+  labs(
+    x = "Number of Trees",
+    y = "Value"  # Update y-axis label
+  ) +
+  # Blank background theme
+  theme_void(base_size = 14) +
+  theme(
+    axis.line = element_line(color = "black"),  # Add axis lines
+    axis.text = element_text(color = "black"),  # Add axis text
+    axis.title.x = element_text(color = "black"),  # Ensure x-axis title styling remains default
+    axis.title.y = element_text(angle = 90, vjust = 0.5, hjust = 0.5, color = "black"),  # Vertical y-axis label
+    plot.margin = margin(t = 10, r = 10, b = 40, l = 40)  # Add white space: top, right, bottom, left
+  )
 
 
 ### Now, plotting our RDA results
 
-#observed <- results[[6]][, 2]
-#IHsurvrf <- results[[6]][, 1]
-#ZOM <- results[[6]][, 3]
+observed <- results[[6]][, 2]
+IHsurvrf <- results[[6]][, 1]
+ZOM <- results[[6]][, 3]
 
 ## Combine data into a dataframe
-#data <- data.frame(
-#  Group = c(rep("observed", length(observed)), rep("IHsurvrf", length(IHsurvrf))),
-#  Value = c(observed, IHsurvrf)
-#)
+data <- data.frame(
+  Group = c(rep("observed", length(observed)), rep("IHsurvrf", length(IHsurvrf))),
+  Value = c(observed, IHsurvrf)
+)
 
-#ggplot(data, aes(x = Group, y = Value, fill = Group)) +
-#  geom_boxplot(alpha = 0, outlier.shape = NA, aes(color = Group)) +
-#  geom_point(position = position_jitterdodge(jitter.width = 0.2), aes(color = Group), size = 3, alpha = 0.6) +
-#  theme_bw() +
-#  theme(axis.title.y = element_blank(),
-#        axis.text.y = element_text(size = 10),
-#        axis.text.x = element_text(size = 14),  # Adjust x-axis label size here
-#        axis.ticks.y = element_line(),
-#        axis.title.x = element_blank()) +
-#  theme(legend.position = "none") +
-#  geom_text(data = data.frame(Group = c("observed", "IHsurvrf"),
-#                              Value = c(mean(observed), mean(IHsurvrf))),
-#            aes(x = Group, y = Value, label = round(Value, 2)), vjust = 5, hjust = 0, color = "black", size = 4) +
-#  geom_point(data = data.frame(Group = c("observed", "IHsurvrf"),
-#                               Value = c(mean(observed), mean(IHsurvrf))),
-#             aes(x = Group, y = Value), color = "black", size = 3)
-#
+ggplot(data, aes(x = Group, y = Value, fill = Group)) +
+  geom_boxplot(alpha = 0, outlier.shape = NA, aes(color = Group)) +
+  geom_point(position = position_jitterdodge(jitter.width = 0.2), aes(color = Group), size = 3, alpha = 0.6) +
+  theme_bw() +
+  theme(axis.title.y = element_blank(),
+        axis.text.y = element_text(size = 10),
+        axis.text.x = element_text(size = 14),  # Adjust x-axis label size here
+        axis.ticks.y = element_line(),
+        axis.title.x = element_blank()) +
+  theme(legend.position = "none") +
+  geom_text(data = data.frame(Group = c("observed", "IHsurvrf"),
+                              Value = c(mean(observed), mean(IHsurvrf))),
+            aes(x = Group, y = Value, label = round(Value, 2)), vjust = 5, hjust = 0, color = "black", size = 4) +
+  geom_point(data = data.frame(Group = c("observed", "IHsurvrf"),
+                               Value = c(mean(observed), mean(IHsurvrf))),
+             aes(x = Group, y = Value), color = "black", size = 3)
+
 
 # ---------------------------------------------------------------------------------- #
 
