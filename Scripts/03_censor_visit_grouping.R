@@ -19,8 +19,6 @@ source('Scripts/02_data_processing.R')
 ########## We want to create a column of events with a running total of these through time.
 ########## once the second event is reached, we censor. We also want to alter, so that our baseline visit (visit 0) is the first resection
 
-## gpy2dk6fp1wsaseu has had 2 
-## wwtndjyzaj2xny5c has had multiple
 
 cohort <- cohort %>% mutate(resection = ifelse(proc_cde ==  "44140" |  ### large bowel
                                        proc_cde == "44141"| 
@@ -51,15 +49,6 @@ cohort <- cohort %>% mutate(resection = ifelse(proc_cde ==  "44140" |  ### large
   
   group_by(pat_id) %>% arrange(from_dt, desc(resection)) %>%
   
-  ####### the same date or hospitalization can have multiple resections billed, but we only want to count that once
-  ####### we find when a patient's last resection was, and if it was within the same hospitalization, we don't want to count it multiple times
-  
-  ## we should note that resections don't always happen during hospitalizations (some pts have no hospital codes)
-  
-  #mutate(day_1_ins = ifelse(is.na(from_dt), 0, as.integer(!duplicated(from_dt) ))) %>%
-  
-  #mutate(hosp_1_ins = ifelse(is.na(conf_num), 0, as.integer(!duplicated(conf_num) ))) %>%
-  
   
 # Identify the last resection, considering only the date if conf_num is missing
 mutate(last_resection = if_else(lag(resection) == 1, 
@@ -76,10 +65,6 @@ mutate(last_resection = if_else(lag(resection) == 1,
     0
   )) %>%
   
-  #filter(pat_id == "ux78xb5tzx9h9tef") %>%
-  #select(pat_id, procedure_desc, conf_num, from_dt, resection, group, last_resection, unique_resc_indicator) %>% View()
-  
-  
   
   mutate(cum_resection = cumsum(unique_resc_indicator== 1)) 
 
@@ -90,22 +75,6 @@ mutate(last_resection = if_else(lag(resection) == 1,
 final_cohort <- cohort %>%
   
   filter(cum_resection > 0 & cum_resection <= 2)
-
-
-#cohort <- cohort %>%
-#  group_by(pat_id) %>%
-#  arrange(from_dt) %>% # Ensure the data is sorted by date within each patient
-#  mutate(
-#    # Create an indicator for unique hospitalizations
-#    unique_hosp_indicator = ifelse(
-#      !is.na(conf_num) & (conf_num != lag(conf_num, default = first(conf_num)) | is.na(lag(conf_num))),
-#      1, 
-#      0
-#    ),
-#    # Calculate the cumulative sum of unique hospitalizations
-#    cumulative_hospitalizations = cumsum(unique_hosp_indicator)
-#  ) %>%
-#  ungroup()
 
 
 
@@ -218,49 +187,9 @@ final_cohort <- final_cohort %>%
 
 
 
-
-################# NOTE #################
-### There are 455 patients in this dataset in total
-### We will only use 434 (as xian intended) 
-### The extra 21 have not had any intestinal resections
-### 25 of the patients only have baseline-- AKA they don't have next experiences
-########## MEANING, we only have a total of 409 patients with baseline + other visits
-### 42/409 patients experienced a second resection
-### 367 patients were censored (did not experience second resection)
-########################################
-
-
 ########################## Create a diagnosis column so we can see associated diagnoses of "Crohn's Disease" and "Ulcerative Colitis" ############
 
 final_cohort$diagnosis <- ifelse(grepl("(\\b556)|(\\bK51)", final_cohort$diag1),"ulcerative_colitis",
                            ifelse(grepl("(\\b555)|(\\bK50)", final_cohort$diag1), "crohns", NA))
 
-########################## Graph distribution of maximum number of visits (only include each patient)
-#visit_freq <- final_cohort %>% group_by(pat_id) %>% summarise(max_visit = max(visit))
-
-
-#ggplot(data = visit_freq, aes(x = max_visit)) +
-#  geom_bar() +  xlab("Maximum Number of Visits") + scale_x_continuous(breaks=seq(0,100, 10)) +
-#  ylab("Count") +scale_y_continuous(breaks = seq(0, 25, 5)) +
-#  ggtitle("Visit Distribution Across all Patients, N = 409") + 
-#  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-#        panel.background = element_blank(), axis.line = element_line(colour = "black"))
-
-
-#### Viewing patients
-#cohort %>% filter(pat_id == "6otcqjhimow4qxn9") %>% select(pat_id, from_dt,procedure_desc, group, conf_num) %>% View()
-
-#final_cohort %>% filter(pat_id == "2bswfnxvlhpkjowj") %>% 
-#  select(pat_id, from_dt,procedure_desc, 
-#         group, conf_num, drug_class, hosp_1_ins, outpatient_event, visit, resection, cum_resection) %>% 
-# View()
-
-
-#final_cohort %>%
-#  group_by(pat_id) %>%
-#  filter(max(visit) >= 1) %>%
-#  ungroup() %>%  # Ungroup after filtering
-#  select(pat_id, from_dt, procedure_desc, group, class,conf_num, hosp_1_ins, outpatient_event, visit, resection, cum_resection) %>%
-#  group_by(pat_id) %>% slice(1) %>% 
-#  View()
 

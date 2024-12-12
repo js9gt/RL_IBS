@@ -20,15 +20,12 @@ tau = 1000
 timepoints = seq(0, sqrt(tau), length.out = 300)^2
 
 ## tuning parameters
-## 1 trees for troubleshooting
-#Ntree = 400
+
 nodesize = 5
 mindeath = round(sqrt(c(nodesize)), 0)
 rule =  "mean" 
 ert = TRUE; rs = 0.2 # randomSplit = 0.2
 
-#cat("value.criterion =",value.criterion[1], "ntree =", Ntree, 
-#    "tau =", tau, "nodesize =", nodesize, "mindeath =", mindeath, "\n")
 
 ## parameters
 nstages = 3
@@ -110,13 +107,6 @@ for (stage in 1:nstages) {
 ## cumulative time so far
 ## Action
 
-# --------------- this is when we use all 20 stages --------------- #
-# Define the overall propensity score formula: this is when we use all 20 stages
-#prform <- "factor(A) ~ prev.visit.length + nstageprev + cumulative.hosp + A1.count + A0.count + age.first.resc + der.sex + cumulative.time"
-# Convert the string into a formula
-#overall.form.weight <- as.formula(prform)
-# ----------------------------------------------------------------- #
-
 
 ### we build a separate propensity score model for each stage
 
@@ -162,14 +152,6 @@ for (stage in 1:nstages) {
   # Save the model in the list, dynamically naming it
   form.cs[[paste0('prop', stage, '.formula')]] <- formula
 }
-
-# Define the overall survival model formula
-#csform <- "Surv(visit.length, delta) ~ prev.visit.length + nstageprev +
-#cumulative.hosp + A1.count + A0.count + age.first.resc + der.sex + A + cum.time"
-
-# Convert the string into a formula
-#overall.form.cs <- as.formula(csform)
-
 
 
 ## ----------------------------------------- ##
@@ -418,137 +400,6 @@ ggplot(data, aes(x = Group, y = Value, fill = Group)) +
                                Value = c(mean(observed), mean(IHsurvrf))),
              aes(x = Group, y = Value), color = "black", size = 3)
 
-
-# ---------------------------------------------------------------------------------- #
-
-
-
-## now, we get the propensity score of the test data
-## testing propensity score & weight generation
-## note: we treat each patient's stage as a separate observation, and pool all of these together to fit one propensity score model for the strata
-#weight_test = weights_claims(data = test, weight.formula = overall.form.weight, weight.cens = form.cs, nstage = nstages)
-#
-## replace the arguments with the test data
-#args.IHsurvrf$data <- test %>% select(- c("overall.delta", "overall.time"))
-#
-### input the estimated optimal from the data from IHsurv.policy
-### this outputs for each patient, a propensity score for each stage (need to check number of observations)
-#args.IHsurvrf$propscore <- getProp(actual = test %>% select(paste0("A_", 1:nstages)), estimated = opt.rule.IHsurvrf, propensity = weight_test$propensity,
-#                                   nstages = nstages)
-#
-### next, we re-fit a forest using the input propensity scores
-### this forest now incorporates propensity scores in the estimation of the survival curves
-#IHsurvrf.policy <- 
-#  try(do.call(IHdtrSurv, c(args.IHsurvrf, list(nodeSize = nodesize, minEvent = mindeath))))
-#err.IHsurvrf = class(IHsurvrf.policy)[1] == "try-error"
-#
-#
-#save(IHsurvrf.policy, file = "20stage_cv10_2.RData")
-
-
-## ----------------------------------------- ##
-##             Value Estimation  -- propensity score stuff            ##
-## ----------------------------------------- ##
-
-
-### 1. at each stage for each patient, we want to get the area under the curve
-### each patient is an item in its own list, with dimensions nstages x ntimes 
-#
-#
-## --- predicted survival curve --- #
-### we want each patient to have a set of all stages, with the number of rows being the number of timepoints
-#
-## Create a list to store matrices for each patient
-#opt.curve.IHsurvrf <- vector("list", nrow(test))
-#
-## Populate the list with matrices filled with NA, each with 2500 rows and 'nstages' columns
-#for (i in 1:nrow(test)) {
-#  opt.curve.IHsurvrf[[i]] <- setNames(data.frame(matrix(NA, nrow = length(timepoints), ncol = nstages)),
-#                                      paste0("A_", 1:nstages))
-#}
-#
-#
-#for (q in 1:nstages) {
-#  if (!err.IHsurvrf) {
-#    
-#    elig =  !is.na(test[[paste0("visit.length_", q)]])
-#    
-#    
-#    # Extract the optimalY values for all eligible patients
-#    optimalY <- IHsurvrf.policy@Forest1@FinalForest@optimal@optimalY
-#    
-#    # Map the optimalY values into the corresponding matrices for each eligible patient
-#    # Loop through eligible patient indices
-#    eligible_indices <- which(elig)
-#    for (i in seq_along(eligible_indices)) {
-#      patient_index <- eligible_indices[i]
-#      # Assign the i-th row of optimalY (corresponding to the patient) to the matrix of that patient for stage q
-#      opt.curve.IHsurvrf[[patient_index]][, q] <- optimalY[i, ]
-#    }
-#  }
-#}
-#
-### number of terminal nodes in the tree
-##sum((IHsurvrf.policy@Forest1@FinalForest@survRF@trees[[1]])$nodes[, 1] == -1)
-#
-### value of treatment 0 vs 1
-##IHsurvrf.policy@Forest1@FinalForest@valueAllTx$mean %>% View()
-#
-### mean of the difference between the two treatments 
-##mean(abs(IHsurvrf.policy@Forest1@FinalForest@valueAllTx$mean[,1] - IHsurvrf.policy@Forest1@FinalForest@valueAllTx$mean[, 2])) %>% View()
-#
-##### sample plot of the KM curve for the first patient's first stage
-#
-#xaxis <- timepoints
-#y1 <- IHsurvrf.policy@Forest1@FinalForest@optimal@optimalY[1, ]
-#plot(xaxis, y1, cex = 0.2)
-#
-### 2. then, we calculate the average of the area under the curve for the first stage, since that includes the maximum over all other stages
-#
-## Create a matrix to store the AUC values, with rows for patients and columns for stages
-#auc_values <- matrix(NA, nrow = nrow(test), ncol = nstages)
-#
-## Loop through each patient and each stage to compute the AUC
-#for (i in 1:nrow(filtered_test)) {
-#  for (q in 1:nstages) {
-#    # Extract the survival probabilities for the current patient and stage
-#    surv_prob <- opt.curve.IHsurvrf[[i]][, q]
-#    
-#    # Calculate the AUC using the area_under_curve function, if surv_prob is not all NA
-#    if (!all(is.na(surv_prob))) {
-#      auc_values[i, q] <- area_under_curve(surv_prob = surv_prob, time_points = timepoints)
-#    }
-#  }
-#}
-#
-#
-#message("mean AUC: IHsurvrf ", mean(auc_values[, 1], na.rm = TRUE))
-#
-#values[cv, "IHsurvRF"] <- mean(auc_values[, 1], na.rm = TRUE)
-
-## ---------------------- comparison to overall KM survival curve --------------------- #
-# Fit the Kaplan-Meier survival model
-## event indicator for Surv: 0 = alive, 1 = death
-#km_fit <- survfit(Surv(overall.time, overall.delta) ~ 1, data = test)
-## Extract time points and survival probabilities
-#time_points <- km_fit$time
-#surv_probs <- km_fit$surv
-#
-## Create a data frame for plotting
-#km_data <- data.frame(Time = time_points, Survival = surv_probs)
-#
-## Plot the overall Kaplan-Meier curve using ggplot2
-#ggplot(km_data, aes(x = Time, y = Survival)) +
-#  geom_step() +  # Creates the step function for the KM curve
-#  labs(title = "Kaplan-Meier Survival Curve",
-#       x = "Time",
-#       y = "Survival Probability") +
-#  ylim(0, 1) +  # Set y-axis limits from 0 to 1
-#  theme_minimal()
-#
-#message("Observed", sum(diff(time_points) * head(surv_probs, -1)))
-#
-#values[cv, "observed"] <- sum(diff(time_points) * head(surv_probs, -1))
 
 
 

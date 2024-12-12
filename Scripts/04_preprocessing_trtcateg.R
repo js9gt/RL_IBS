@@ -145,55 +145,6 @@ final_cohort <- final_cohort %>%
   
  ungroup()
 
-## define the the number of days since the last hospitalization
-#final_cohort <- final_cohort %>%
-#  # Step 1: Select one row per visit
-#  group_by(pat_id, visit) %>%
-#  slice(1) %>%
-#  ungroup() %>%
-#  
-#  # Step 2: Calculate cumulative hospitalizations and identify the visit of last hospitalization
-#  select(pat_id, visit, visit.length, conf_num, cumulative.hosp, visit_of_last_hosp) %>%
-#  
-#  # Step 3: Create vis_length_at_last_hosp column based on the visit_of_last_hosp
-#  group_by(pat_id) %>%
-#  mutate(
-#    vis_length_at_last_hosp = visit.length[match(visit_of_last_hosp, visit)]
-#  ) %>%
-#  
-#  ungroup() %>%
-#  
-#  # Step 4: For each cumulative_hosp, calculate the cumulative sum of visit lengths starting from vis_length_at_last_hosp
-#  group_by(pat_id, cumulative.hosp) %>%
-#  
-#  # Step 5: Order visits within each cumulative_hosp group
-#  arrange(pat_id, cumulative.hosp, visit) %>%
-#  
-#  # Step 6: Calculate days_since_last_hosp_cum
-#  mutate(
-#    # Set the initial value of days_since_last_hosp_cum to vis_length_at_last_hosp
-#    days.since.last.hosp.cum = if_else(row_number() == 1 & !is.na(visit_of_last_hosp),
-#                                       vis_length_at_last_hosp,
-#                                       NA_real_),
-#    
-#    # Use lag to carry forward the cumulative sum
-#    days.since.last.hosp.cum = if_else(is.na(days.since.last.hosp.cum), 
-#                                       vis_length_at_last_hosp + lag(cumsum(visit.length), default = 0), 
-#                                       days.since.last.hosp.cum)
-#  ) %>%
-#  
-#  ungroup() %>%
-#  select(pat_id, visit, visit.length, days.since.last.hosp.cum) %>% 
-#  
-#  # Join back to the original data to keep all rows per visit
-#  right_join(final_cohort, by = c("pat_id", "visit", "visit.length")) %>%
-#  
-#  # Fill the cumulative columns down for each visit
-#  group_by(pat_id) %>%
-#  tidyr::fill(days.since.last.hosp.cum, .direction = "down") %>%
-#  
-#  ungroup() 
-
  
 
 ## 3. define baseline variables: age at first surgery--  year of first resection - der_YOB, sex (der_sex)
@@ -458,9 +409,6 @@ delta_summary <- final_cohort %>%
 final_cohort <- final_cohort %>% select(-delta, -overall.delta) %>%
   left_join(delta_summary, by = c("subj.id", "stage"))
 
-## wwtndjyzaj2xny5c should be censored at stage 6
-
-
 ########
 
 
@@ -471,9 +419,6 @@ final_cohort$der.sex <- as.factor(final_cohort$der.sex)
 final_cohort$subj.id <- as.factor(final_cohort$subj.id)
 
 
-#### NOTE: there is a patient in which we don't know their age: p6u2merrzgegbs72
-#### this is because we don't have their birth year
-## therefore, we will proceed with the rest of the analysis with only 408 patients, after excluding this one
 
 
 ## ------------- pivoting the data to wide form -----------##

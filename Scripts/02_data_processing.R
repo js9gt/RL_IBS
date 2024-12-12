@@ -7,36 +7,6 @@ setwd("~/RL_IBS")
 ##Add source file reading in data
 source('Scripts/01_read_cohort_data.R')
 
-#Read in excel file
-#ibs_dat <- read_excel("ibs_dat.xlsx", skip = 1)
-
-
-#Read in excel file for 4 additional patients
-# dat_4pts <- read_excel("data_4pts.xlsx", 
-#                         col_types = c("text", "numeric", "text", 
-#                                        "text", "text", "text", "text", "numeric", 
-#                                        "text", "numeric", "numeric", "text", 
-#                                        "numeric", "numeric", "numeric", 
-#                                        "numeric", "numeric", "text", "text", 
-#                                        "text", "text", "numeric", "text", 
-#                                        "numeric", "numeric", "text", "text", 
-#                                        "text", "text", "text", "text", "text", 
-#                                        "text", "text", "numeric", "numeric", 
-#                                        "numeric", "numeric", "text", "numeric", 
-#                                        "numeric", "numeric", "numeric", 
-#                                        "numeric", "numeric", "numeric", 
-#                                        "numeric", "numeric", "numeric", 
-#                                        "numeric", "numeric", "numeric", 
-#                                        "text", "text", "numeric", "numeric", 
-#                                        "text", "text", "text", "text", "text", 
-#                                        "text", "text", "numeric", "text", 
-#                                        "numeric"))
-
-
-
-
- 
-##### all the data manipulation sections ########
 
 
 ## Create new column called "group"-- these will have the option to be:
@@ -1600,9 +1570,6 @@ cohort$conf_num <- as.character(cohort$conf_num)
 cohort$conf_num[cohort$conf_num == ""] <- NA
 
 cohort$ndc[cohort$ndc == ""] <- NA
-
-#Output as RDS file for upload
-#saveRDS(cohort, "cohort.rds")
 
 
 
